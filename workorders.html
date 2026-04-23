@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Potomac Shores — Daily Work Orders</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+  :root {
+    --navy:#0B1F2E; --steel:#1A3A5C; --teal:#1B6B5A; --teal-lt:#2A8C72;
+    --gold:#B8933A; --cream:#F8F6F0; --light:#EEF2F5; --rule:#CBD5E1;
+    --mgray:#6B7280; --dgray:#1C2E3A; --white:#FFFFFF;
+    --red:#8B1A2B; --green:#1B6B3A; --amber:#D97706;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Source Sans 3',sans-serif;background:var(--navy);min-height:100vh;}
+  .header{background:var(--navy);border-bottom:3px solid var(--gold);padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;}
+  .htitle{font-family:'Playfair Display',serif;color:var(--white);font-size:1.2rem;}
+  .hsub{color:var(--gold);font-size:.7rem;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;margin-top:2px;}
+  .hdate{color:var(--rule);font-size:.82rem;text-align:right;}
+  .container{max-width:680px;margin:0 auto;padding:28px 16px 60px;}
+  .card{background:var(--white);border-radius:4px;overflow:hidden;
+    box-shadow:0 8px 40px rgba(0,0,0,.35);}
+  .card-top{background:var(--steel);border-left:5px solid var(--gold);padding:20px 24px;}
+  .card-top h2{font-family:'Playfair Display',serif;color:var(--white);font-size:1.15rem;}
+  .card-top p{color:var(--rule);font-size:.8rem;margin-top:3px;}
+  .section{padding:20px 24px;border-bottom:1px solid var(--rule);}
+  .slabel{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--teal);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .slabel::after{content:'';flex:1;height:1px;background:var(--rule);}
+  label{display:block;font-size:.72rem;font-weight:700;color:var(--mgray);
+    margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase;}
+  input[type=text],input[type=date]{width:100%;padding:9px 12px;
+    border:1.5px solid var(--rule);border-radius:3px;
+    font-family:'Source Sans 3',sans-serif;font-size:.92rem;color:var(--dgray);
+    background:var(--cream);-webkit-appearance:none;transition:border-color .2s;}
+  input:focus{outline:none;border-color:var(--teal);background:var(--white);}
+
+  /* Task list */
+  .task-list{display:flex;flex-direction:column;gap:10px;}
+  .task-item{border:1.5px solid var(--rule);border-radius:4px;overflow:hidden;
+    background:var(--cream);}
+  .task-row{display:flex;align-items:center;gap:10px;padding:12px 14px;
+    background:var(--white);}
+  .task-num{font-size:.72rem;font-weight:700;color:var(--mgray);
+    min-width:20px;text-align:center;}
+  .task-input{flex:1;border:none;background:transparent;
+    font-family:'Source Sans 3',sans-serif;font-size:.95rem;color:var(--dgray);
+    padding:0;}
+  .task-input:focus{outline:none;}
+  .task-input::placeholder{color:var(--rule);}
+  .task-actions{display:flex;gap:6px;align-items:center;}
+
+  /* Voice btn per task */
+  .tv-btn{background:var(--navy);color:var(--white);border:none;
+    padding:5px 10px;border-radius:2px;font-size:.7rem;font-weight:700;
+    cursor:pointer;white-space:nowrap;transition:all .2s;}
+  .tv-btn:hover{background:var(--steel);}
+  .tv-btn.rec{background:var(--red);}
+
+  /* Photo thumb */
+  .task-photo-zone{padding:8px 14px;border-top:1px dashed var(--rule);
+    display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;}
+  .task-photo-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .task-photo-zone span{font-size:.78rem;color:var(--teal);font-weight:600;}
+  .task-thumb{width:48px;height:48px;object-fit:cover;border-radius:2px;
+    border:1px solid var(--rule);}
+
+  /* Remove task */
+  .rm-task{background:none;border:none;color:var(--rule);cursor:pointer;
+    font-size:1rem;padding:0 4px;transition:color .15s;flex-shrink:0;}
+  .rm-task:hover{color:var(--red);}
+
+  /* Add task */
+  .add-task{width:100%;padding:12px;border:2px dashed var(--rule);
+    border-radius:4px;background:transparent;
+    font-family:'Source Sans 3',sans-serif;font-size:.88rem;
+    color:var(--teal);font-weight:700;cursor:pointer;
+    transition:all .2s;letter-spacing:.03em;}
+  .add-task:hover{border-color:var(--teal);background:#F0FDF8;}
+
+  /* Priority */
+  .pri-row{display:flex;gap:8px;margin-top:8px;}
+  .pri-btn{padding:6px 14px;border:2px solid var(--rule);border-radius:16px;
+    font-size:.75rem;font-weight:700;color:var(--mgray);cursor:pointer;
+    transition:all .15s;user-select:none;background:var(--cream);}
+  .pri-btn:hover{border-color:var(--teal);}
+  .pri-btn.on-urgent{border-color:var(--red);background:#FFF5F5;color:var(--red);}
+  .pri-btn.on-normal{border-color:var(--teal);background:#F0FDF8;color:var(--teal);}
+  .pri-btn.on-fyi{border-color:var(--amber);background:#FFFBF0;color:var(--amber);}
+
+  /* Submit bar */
+  .subbar{padding:20px 24px;background:var(--light);border-top:2px solid var(--rule);
+    display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .subto{font-size:.78rem;color:var(--mgray);line-height:1.5;}
+  .subto strong{color:var(--teal);}
+  .bgo{background:var(--teal);color:var(--white);border:none;padding:12px 28px;
+    font-family:'Source Sans 3',sans-serif;font-size:.9rem;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+    border-radius:3px;transition:all .2s;white-space:nowrap;}
+  .bgo:hover{background:var(--teal-lt);}
+
+  /* Success */
+  .ok{display:none;position:fixed;inset:0;background:rgba(11,31,46,.93);
+    z-index:200;align-items:center;justify-content:center;}
+  .ok.show{display:flex;}
+  .okbox{background:var(--white);border-radius:4px;padding:40px 32px;
+    text-align:center;max-width:360px;border-top:4px solid var(--teal);margin:16px;}
+  .okck{width:50px;height:50px;background:var(--teal);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 16px;font-size:1.3rem;color:white;}
+  .okbox h3{font-family:'Playfair Display',serif;color:var(--navy);
+    font-size:1.25rem;margin-bottom:8px;}
+  .okbox p{color:var(--mgray);font-size:.88rem;line-height:1.6;margin-bottom:20px;}
+  .okref{font-size:.75rem;color:var(--teal);font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px;}
+  .bnew{background:var(--navy);color:var(--white);border:none;padding:10px 24px;
+    font-family:'Source Sans 3',sans-serif;font-size:.85rem;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:3px;}
+  .footer{text-align:center;padding:18px;color:rgba(255,255,255,.2);
+    font-size:.7rem;letter-spacing:.06em;}
+
+  @media(max-width:540px){
+    .subbar{flex-direction:column;align-items:stretch;}
+    .bgo{text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <div class="htitle">Potomac Shores</div>
+    <div class="hsub">Daily Work Orders</div>
+  </div>
+  <div class="hdate" id="hdate"></div>
+</header>
+
+<div class="container">
+<div class="card">
+  <div class="card-top">
+    <h2>Daily Work Orders</h2>
+    <p>Add tasks for Jim. Speak or type. Add a photo if it helps.</p>
+  </div>
+
+  <form id="frm" onsubmit="doSub(event)">
+
+    <!-- From & Date -->
+    <div class="section">
+      <div class="slabel">From &amp; Date</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label>Prepared By</label>
+          <input type="text" id="from" value="Daiana" required>
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" id="dt" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="section">
+      <div class="slabel">Tasks for Jim</div>
+      <div class="task-list" id="taskList"></div>
+      <br>
+      <button type="button" class="add-task" onclick="addTask()">
+        + Add Task
+      </button>
+    </div>
+
+    <!-- Notes -->
+    <div class="section">
+      <div class="slabel">Additional Notes — optional</div>
+      <button type="button" class="tv-btn" id="noteVBtn" onclick="toggleNoteVoice()"
+        style="margin-bottom:8px;padding:8px 16px;font-size:.82rem;">
+        🎤 Speak notes
+      </button>
+      <textarea id="notes" rows="3" style="width:100%;padding:12px 14px;
+        border:1.5px solid var(--rule);border-radius:3px;resize:vertical;
+        font-family:'Source Sans 3',sans-serif;font-size:.92rem;
+        color:var(--dgray);background:var(--cream);line-height:1.6;"
+        placeholder="Anything else Jim should know today..."></textarea>
+    </div>
+
+    <!-- Submit -->
+    <div class="subbar">
+      <div class="subto">
+        <strong>Screenshot &amp; send to:</strong> Jim Mitchell<br>
+        Potomac Shores Maintenance
+      </div>
+      <button type="submit" class="bgo">Send to Jim →</button>
+    </div>
+
+  </form>
+</div>
+</div>
+
+<div class="footer">POTOMAC SHORES RESIDENTIAL ASSOCIATION</div>
+
+<div class="ok" id="okscr">
+  <div class="okbox">
+    <div class="okck">✓</div>
+    <h3>Work Orders Ready</h3>
+    <p>Screenshot this confirmation and send to Jim to start his day.</p>
+    <div class="okref" id="oref"></div>
+    <div id="taskSummary" style="text-align:left;margin-bottom:16px;
+      font-size:.85rem;color:var(--dgray);line-height:1.8;
+      border:1px solid var(--rule);border-radius:3px;padding:12px;
+      background:var(--cream);"></div>
+    <button class="bnew" onclick="rst()">New List</button>
+  </div>
+</div>
+
+<script>
+let tasks=[];
+let taskVoiceRecs={};
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const t=new Date();
+  document.getElementById('dt').value=t.toISOString().split('T')[0];
+  document.getElementById('hdate').textContent=
+    t.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  // Start with 3 blank tasks
+  addTask();addTask();addTask();
+});
+
+function addTask(){
+  const id=Date.now()+Math.random();
+  tasks.push({id,text:'',photo:null,priority:'normal'});
+  renderTasks();
+  // Focus the new input
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('.task-input');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },50);
+}
+
+function renderTasks(){
+  const list=document.getElementById('taskList');
+  list.innerHTML=tasks.map((t,i)=>`
+    <div class="task-item" id="ti-${t.id}">
+      <div class="task-row">
+        <span class="task-num">${i+1}</span>
+        <input class="task-input" type="text"
+          placeholder="Describe the task..."
+          value="${t.text}"
+          onchange="updateTask(${t.id},'text',this.value)"
+          oninput="updateTask(${t.id},'text',this.value)">
+        <button type="button" class="tv-btn ${taskVoiceRecs[t.id]?'rec':''}"
+          onclick="toggleTaskVoice(${t.id})" title="Speak this task">🎤</button>
+        <button type="button" class="rm-task" onclick="removeTask(${t.id})">✕</button>
+      </div>
+      <div class="pri-row" style="padding:0 14px 10px;">
+        <div class="pri-btn ${t.priority==='urgent'?'on-urgent':''}"
+          onclick="setPri(${t.id},'urgent',this)">🔴 Urgent</div>
+        <div class="pri-btn ${t.priority==='normal'?'on-normal':''}"
+          onclick="setPri(${t.id},'normal',this)">🟢 Normal</div>
+        <div class="pri-btn ${t.priority==='fyi'?'on-fyi':''}"
+          onclick="setPri(${t.id},'fyi',this)">🟡 FYI / Check on</div>
+      </div>
+      <div class="task-photo-zone">
+        <input type="file" accept="image/*"
+          onchange="addTaskPhoto(${t.id},this)">
+        ${t.photo
+          ? `<img class="task-thumb" src="${t.photo}">
+             <span>Photo attached ✓</span>`
+          : `<span>📷 Add photo (optional)</span>`}
+      </div>
+    </div>`).join('');
+}
+
+function updateTask(id,field,val){
+  const t=tasks.find(t=>t.id===id);
+  if(t) t[field]=val;
+}
+
+function removeTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  renderTasks();
+}
+
+function setPri(id,pri,el){
+  const t=tasks.find(t=>t.id===id);
+  if(t) t.priority=pri;
+  renderTasks();
+}
+
+function addTaskPhoto(id,inp){
+  const f=inp.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const t=tasks.find(t=>t.id===id);
+    if(t){t.photo=e.target.result;renderTasks();}
+  };
+  r.readAsDataURL(f);
+  inp.value='';
+}
+
+// Voice per task
+function toggleTaskVoice(id){
+  if(taskVoiceRecs[id]){
+    taskVoiceRecs[id].stop();
+    delete taskVoiceRecs[id];
+    renderTasks();return;
+  }
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    alert('Voice requires Chrome. Type directly.');return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const rec=new SR();
+  rec.continuous=false;rec.interimResults=false;rec.lang='en-US';
+  taskVoiceRecs[id]=rec;
+  rec.onresult=e=>{
+    const txt=e.results[0][0].transcript;
+    const t=tasks.find(t=>t.id===id);
+    if(t){t.text=(t.text?t.text+' ':'')+txt;}
+    delete taskVoiceRecs[id];
+    renderTasks();
+  };
+  rec.onerror=rec.onend=()=>{
+    delete taskVoiceRecs[id];
+    renderTasks();
+  };
+  rec.start();
+  renderTasks();
+}
+
+// Notes voice
+let noteRec=null,noteRecOn=false;
+function toggleNoteVoice(){
+  const btn=document.getElementById('noteVBtn');
+  if(noteRecOn){noteRec.stop();return;}
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    alert('Voice requires Chrome.');return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  noteRec=new SR();noteRec.continuous=true;noteRec.interimResults=false;noteRec.lang='en-US';
+  noteRec.onstart=()=>{noteRecOn=true;btn.classList.add('rec');btn.textContent='🎤 Listening — tap to stop';};
+  noteRec.onresult=e=>{
+    const txt=[...e.results].slice(-1)[0][0].transcript;
+    const f=document.getElementById('notes');
+    f.value+=(f.value?' ':'')+txt;
+  };
+  noteRec.onerror=noteRec.onend=()=>{
+    noteRecOn=false;btn.classList.remove('rec');btn.textContent='🎤 Speak notes';
+  };
+  noteRec.start();
+}
+
+function mkRef(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return`WO-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+function doSub(e){
+  e.preventDefault();
+  const filled=tasks.filter(t=>t.text.trim());
+  if(!filled.length){alert('Please add at least one task.');return;}
+  const ref=mkRef();
+  const priLabel={urgent:'🔴 URGENT',normal:'🟢 Normal',fyi:'🟡 FYI'};
+  document.getElementById('taskSummary').innerHTML=
+    filled.map((t,i)=>`<div>${i+1}. ${priLabel[t.priority]||'🟢'} ${t.text}${t.photo?' 📷':''}</div>`).join('');
+  document.getElementById('oref').textContent='Ref: '+ref;
+  document.getElementById('okscr').classList.add('show');
+}
+
+function rst(){
+  document.getElementById('frm').reset();
+  document.getElementById('okscr').classList.remove('show');
+  tasks=[];
+  addTask();addTask();addTask();
+  const t=new Date();
+  document.getElementById('dt').value=t.toISOString().split('T')[0];
+  document.getElementById('hdate').textContent=
+    t.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+}
+</script>
+</body>
+</html>
