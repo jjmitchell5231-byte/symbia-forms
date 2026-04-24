@@ -306,6 +306,35 @@
       </div>
     </div>
 
+    <!-- Generate Report -->
+    <div class="section">
+      <div class="slabel">Generate Report</div>
+      <p style="font-size:.82rem;color:var(--mgray);margin-bottom:12px;">
+        Tap to build a clean text report — then copy and send to Daiana &amp; Sara.
+      </p>
+      <button type="button" onclick="generateReport()"
+        style="width:100%;padding:13px;background:var(--navy);color:var(--white);
+          border:none;border-radius:3px 3px 0 0;font-family:'Source Sans 3',sans-serif;
+          font-size:.95rem;font-weight:700;letter-spacing:.04em;cursor:pointer;">
+        📋 Generate Report
+      </button>
+      <textarea id="reportOut" rows="10"
+        style="border-radius:0 0 3px 3px;border-top:none;font-size:.82rem;
+          font-family:monospace;background:#F8F6F0;"
+        placeholder="Tap Generate Report to build your report here..."></textarea>
+      <button type="button" onclick="copyReport()" id="copyBtn"
+        style="width:100%;margin-top:8px;padding:11px;background:var(--teal);
+          color:var(--white);border:none;border-radius:3px;
+          font-family:'Source Sans 3',sans-serif;font-size:.9rem;font-weight:700;
+          letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">
+        📄 Copy to Clipboard
+      </button>
+      <p id="copyConfirm" style="display:none;text-align:center;font-size:.8rem;
+        color:var(--green);font-weight:700;margin-top:6px;">
+        ✓ Copied — paste into text or email to send
+      </p>
+    </div>
+
     <!-- Submit -->
     <div class="subbar">
       <div class="subto">
@@ -571,6 +600,69 @@ function clrSig(){
   sctx.clearRect(0,0,document.getElementById('sc').width,
     document.getElementById('sc').height);
   hasSig=false;document.getElementById('sph').style.display='flex';
+}
+
+
+// ── Generate & Copy ───────────────────────────────────────────────────────────
+function generateReport(){
+  const name=document.getElementById('nm').value;
+  const date=document.getElementById('dt').value;
+  const obs=document.getElementById('obs').value.trim();
+  const areas=[...document.querySelectorAll('.pill.on')].map(p=>p.dataset.v).join(', ');
+  const statusMap={r:'All Done',p:'Items Carrying Forward',e:'Needs Attention','':`Not set`};
+  let r='';
+  r+='POTOMAC SHORES — DAILY FIELD REPORT\n';
+  r+=('─'.repeat(40))+'\n';
+  r+='Submitted by: '+name+'\n';
+  r+='Date: '+date+'\n';
+  r+='Areas covered: '+(areas||'Not specified')+'\n';
+  r+='Status: '+(statusMap[stat]||'Not set')+'\n';
+  r+=('─'.repeat(40))+'\n\n';
+  const done=workOrders.filter(w=>w.status==='done');
+  const carrying=workOrders.filter(w=>w.status==='carrying');
+  const open=workOrders.filter(w=>w.status==='open');
+  if(done.length){
+    r+='✓ COMPLETED ('+done.length+')\n';
+    done.forEach((w,i)=>{
+      r+='  '+(i+1)+'. '+w.text+'\n';
+      if(w.log.length) w.log.forEach(l=>r+='     → '+(l.date||'')+': '+(l.note||l)+'\n');
+    });
+    r+='\n';
+  }
+  if(carrying.length){
+    r+='↻ CARRYING FORWARD ('+carrying.length+')\n';
+    carrying.forEach((w,i)=>{
+      r+='  '+(i+1)+'. '+w.text+' (day '+w.carryDays+')\n';
+      if(w.log.length) w.log.forEach(l=>r+='     → '+(l.date||'')+': '+(l.note||l)+'\n');
+    });
+    r+='\n';
+  }
+  if(open.length){
+    r+='○ NOT ADDRESSED ('+open.length+')\n';
+    open.forEach((w,i)=>r+='  '+(i+1)+'. '+w.text+'\n');
+    r+='\n';
+  }
+  if(obs){ r+='FIELD OBSERVATIONS\n'+obs+'\n\n'; }
+  r+=('─'.repeat(40))+'\n';
+  r+='Ref: '+mkRef()+'\n';
+  r+='Potomac Shores — Confidential Operations';
+  document.getElementById('reportOut').value=r;
+  document.getElementById('copyBtn').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function copyReport(){
+  const out=document.getElementById('reportOut');
+  if(!out.value.trim()){alert('Tap Generate Report first.');return;}
+  const confirm=document.getElementById('copyConfirm');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(out.value).then(()=>{
+      confirm.style.display='block';
+      setTimeout(()=>confirm.style.display='none',3000);
+    });
+  } else {
+    out.select();document.execCommand('copy');
+    confirm.style.display='block';
+    setTimeout(()=>confirm.style.display='none',3000);
+  }
 }
 
 // ── Submit ────────────────────────────────────────────────────────────────────
